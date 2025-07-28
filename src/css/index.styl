@@ -1,0 +1,32 @@
+// 1. 定义变量（无需$或分号）
+primary-color = #3498db
+box-shadow = 0 4px 8px rgba(0, 0, 0, 0.1)
+
+// 2. 使用缩进语法为元素添加样式
+.fancy-box2
+  // 基础样式（无需冒号和分号）
+  width 200px
+  height 200px
+  background-color lighten(primary-color, 20%)
+  background-image url("../img/1.png");
+  color white
+  border-radius 8px
+  display flex
+  align-items center
+  justify-content center
+  font-family Arial, sans-serif
+  
+  // 使用变量
+  box-shadow box-shadow
+  
+  // 伪类嵌套（&代表父级）
+  &:hover
+    background-color darken(primary-color, 10%)
+    transform translateY(-5px)
+    transition all 0.3s ease
+  
+  // 媒体查询嵌套
+  @media (max-width: 600px)
+    width 150px
+    height 150px
+    font-size 14px

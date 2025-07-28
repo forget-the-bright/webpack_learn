@@ -1,0 +1,45 @@
+{
+  "name": "webpack_learn",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx webpack serve",
+    "build:dev": "npx webpack --mode=development",
+    "build:prod": "npx webpack --mode=production"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.2",
+    "css-minimizer-webpack-plugin": "^7.0.2",
+    "eslint": "^9.31.0",
+    "eslint-webpack-plugin": "^5.0.2",
+    "html-webpack-plugin": "^5.6.3",
+    "less": "^4.4.0",
+    "less-loader": "^12.3.0",
+    "mini-css-extract-plugin": "^2.9.2",
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.1.1",
+    "postcss-preset-env": "^10.2.4",
+    "sass": "^1.89.2",
+    "sass-loader": "^16.0.5",
+    "style-loader": "^4.0.0",
+    "stylus": "^0.64.0",
+    "stylus-loader": "^8.1.1",
+    "webpack": "^5.100.2",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
+  },
+
+  "browserslist": [
+    "last 2 version", 
+    "> 1%",
+    "not dead" 
+  ]
+}
