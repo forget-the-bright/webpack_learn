@@ -7,6 +7,12 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 // 引入插件 css压缩
 // 该插件用于压缩 CSS 文件
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+// 引入插件 terser-webpack-plugin 用于压缩 JS 文件 生产环境下是默认使用的插件，这里为了演示自定义配置
+// const TerserPlugin = require('terser-webpack-plugin');
+const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
+const os = require("os");
+// cpu核数
+const threads = os.cpus().length;
 // 获取处理样式的Loaders
 const getStyleLoaders = (preProcessor) => {
     return [
@@ -46,61 +52,76 @@ module.exports = {
     // 模块解析规则
     module: {
         // 模块规则（配置 loader）
-        rules: [
-            {
-                test: /\.css$/i,
-                // 使用多个 loader 处理 CSS 文件 执行顺序是从右到左，从下到上，
-                use: getStyleLoaders() // 使用 getStyleLoaders 函数获取处理 CSS 的 loader
+        rules: [{
+            // 使用oneOf 规则，匹配其中一个loader处理只有就结束，提高效率，不加oneOf会从上到下匹配所有的loader
+            oneOf: [
+                {
+                    test: /\.css$/i,
+                    // 使用多个 loader 处理 CSS 文件 执行顺序是从右到左，从下到上，
+                    use: getStyleLoaders() // 使用 getStyleLoaders 函数获取处理 CSS 的 loader
 
-            },
-            {
-                test: /\.less$/i,
-                use: getStyleLoaders('less-loader')
-            },
-            {
-                test: /\.s[ac]ss$/i,
-                use: getStyleLoaders('sass-loader')
-            },
-            {
-                test: /\.styl$/,
-                use: getStyleLoaders('stylus-loader')
-            },
-            {
-                test: /\.(png|jpe?g|gif|webp)$/,
-                type: "asset",
-                parser: {
-                    dataUrlCondition: {
-                        maxSize: 15 * 1024 // 小于10kb的图片会被base64处理
-                    }
                 },
-                generator: {
-                    // 将图片文件输出到 static/imgs 目录中
-                    // 将图片文件命名 [hash:8][ext][query]
-                    // [hash:8]: hash值取8位
-                    // [ext]: 使用之前的文件扩展名
-                    // [query]: 添加之前的query参数
-                    filename: "static/imgs/[hash:8][ext][query]",
+                {
+                    test: /\.less$/i,
+                    use: getStyleLoaders('less-loader')
                 },
-            },
-            {
-                test: /\.(ttf|woff2?|map4|map3|avi)$/,
-                type: "asset/resource",
-                generator: {
-                    filename: "static/media/[hash:8][ext][query]",
+                {
+                    test: /\.s[ac]ss$/i,
+                    use: getStyleLoaders('sass-loader')
                 },
-            },
-            {
-                test: /\.m?js$/,
-                exclude: /(node_modules|bower_components)/,
-                use: {
-                    loader: 'babel-loader',
-                    // 使用 Babel 预设,这里传递给babel配置选项,当前也可以在外边添加配置参考 babel文档.
-                    // options: {
-                    //     presets: ['@babel/preset-env'],
-                    // },
+                {
+                    test: /\.styl$/,
+                    use: getStyleLoaders('stylus-loader')
                 },
-            },
-        ]
+                {
+                    test: /\.(png|jpe?g|gif|webp)$/,
+                    type: "asset",
+                    parser: {
+                        dataUrlCondition: {
+                            maxSize: 15 * 1024 // 小于10kb的图片会被base64处理
+                        }
+                    },
+                    generator: {
+                        // 将图片文件输出到 static/imgs 目录中
+                        // 将图片文件命名 [hash:8][ext][query]
+                        // [hash:8]: hash值取8位
+                        // [ext]: 使用之前的文件扩展名
+                        // [query]: 添加之前的query参数
+                        filename: "static/imgs/[hash:8][ext][query]",
+                    },
+                },
+                {
+                    test: /\.(ttf|woff2?|map4|map3|avi)$/,
+                    type: "asset/resource",
+                    generator: {
+                        filename: "static/media/[hash:8][ext][query]",
+                    },
+                },
+                {
+                    test: /\.m?js$/,
+                    exclude: __dirname + /(node_modules|bower_components)/,
+                    use: [
+                        {
+                            loader: "thread-loader", // 开启多进程
+                            options: {
+                                workers: threads, // 数量
+                            },
+                        },
+                        {
+                            loader: 'babel-loader',
+                            options: {
+                                // 使用 Babel 预设,这里传递给babel配置选项,当前也可以在外边添加配置参考 babel文档.
+                                // presets: ['@babel/preset-env'],
+                                cacheDirectory: true, // 开启babel编译缓存
+                                cacheCompression: false, // 缓存文件不要压缩
+                            },
+                        }
+                    ],
+                },
+            ]
+        }]
+
+
     },
     // 开发服务器配置
     devServer: {
@@ -120,6 +141,8 @@ module.exports = {
             // 在浏览器中以百分比显示编译进度。
             progress: true,
         },
+        hot: true, // 启用热模块替换 默认打开在webpack5但在webpack4 是默认关闭的，
+        open: true, // 启动服务器后自动打开浏览器访问项目
     },
     optimization: {
         minimizer: [
@@ -140,6 +163,14 @@ module.exports = {
             // 指定 ESLint 配置文件
             // 如果不指定，默认会在项目根目录查找 .eslintrc
             overrideConfigFile: __dirname + '/eslint.config.js',
+            exclude: function () {
+                // 排除 node_modules 目录
+                //console.log("王浩",__dirname + '/node_modules/');
+                return __dirname + '/node_modules/';
+            }(),
+            cache: true, // 启用缓存
+            cacheLocation: __dirname + '/node_modules/.cache/.eslintcache', // 指定
+            threads, // 开启多进程
         }),
         new HtmlWebpackPlugin({
             template: './public/index.html', // 模板文件
@@ -150,6 +181,35 @@ module.exports = {
         new MiniCssExtractPlugin({
             // 定义输出文件名和目录
             filename: "static/css/main.css",
+        }),
+
+        // 压缩图片
+        new ImageMinimizerPlugin({
+            minimizer: {
+                implementation: ImageMinimizerPlugin.imageminGenerate,
+                options: {
+                    plugins: [
+                        ["gifsicle", { interlaced: true }],
+                        ["jpegtran", { progressive: true }],
+                        ["optipng", { optimizationLevel: 5 }],
+                        [
+                            "svgo",
+                            {
+                                plugins: [
+                                    "preset-default",
+                                    "prefixIds",
+                                    {
+                                        name: "sortAttrs",
+                                        params: {
+                                            xmlnsOrder: "alphabetical",
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    ],
+                },
+            },
         }),
     ]
 }
