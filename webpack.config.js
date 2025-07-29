@@ -34,6 +34,7 @@ const getStyleLoaders = (preProcessor) => {
 module.exports = {
     // 开发模式
     mode: 'production',
+    devtool: "source-map",
     // 入口文件
     entry: './src/main.js',
     // 输出规则
